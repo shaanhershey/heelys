@@ -12,7 +12,9 @@
   "dependencies": {
     "react": "16.13.1",
     "react-native": "0.63.3",
+    "react-native-ble-manager": "^7.4.1",
     "react-native-ble-plx": "^2.0.1",
+    "react-native-bluetooth-serial": "^1.0.0-rc1",
     "rn-vertical-slider": "^2.0.2"
   },
   "devDependencies": {
