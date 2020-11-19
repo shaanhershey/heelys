@@ -11,7 +11,11 @@ export default class Slider extends Component{
             value : 0,
             on : true,
             isEnabled: false,
-            devices: []
+            discovering: false,
+            devices: [],
+            unpairedDevices: [],
+            connected: false,
+            section: 0
         }
         //this.manager = new BleManager();
     }
@@ -31,9 +35,30 @@ export default class Slider extends Component{
           }
     });
 
-    componentDidMount() {
-        BluetoothSerial.list();
-    }
+    componentDidMount () {
+        Promise.all([
+          BluetoothSerial.isEnabled(),
+          BluetoothSerial.list()
+        ])
+        .then((values) => {
+          const [ isEnabled, devices ] = values
+          this.setState({ isEnabled, devices })
+        })
+    
+        BluetoothSerial.on('bluetoothEnabled', () => Toast.showShortBottom('Bluetooth enabled'))
+        BluetoothSerial.on('bluetoothDisabled', () => Toast.showShortBottom('Bluetooth disabled'))
+        BluetoothSerial.on('error', (err) => console.log(`Error: ${err.message}`))
+        BluetoothSerial.on('connectionLost', () => {
+          if (this.state.device) {
+            Toast.showShortBottom(`Connection to device ${this.state.device.name} has been lost`)
+          }
+          this.setState({ connected: false })
+        })
+        console.log(BluetoothSerial.list());
+      }
+
+
+    
 
     // componentDidMount() {
     //     PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION)
@@ -106,6 +131,15 @@ export default class Slider extends Component{
                 />
             </View>
         );
+    }
+
+    connect = (device) => {
+        BluetoothSerial.connect(device.id)
+        .then((res) => {
+            Toast.showShortBottom(`Connected to device ${device.name}`)
+            this.setState({ device, connected: true, connecting: false })
+        })
+        .catch((err) => Toast.showShortBottom(err.message))
     }
 
     valueChange = (value) => {
