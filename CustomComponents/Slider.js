@@ -1,8 +1,10 @@
 import React, {Component} from 'react';
-import { Button, StyleSheet, Text, TouchableOpacity, View, PermissionsAndroid } from 'react-native';
-import { BluetoothSerial } from 'react-native-bluetooth-serial';
-//import { BleManager } from 'react-native-ble-plx';
+import { Button, 
+    StyleSheet, Text, TouchableOpacity, View, PermissionsAndroid } from 'react-native';
 import VerticalSlider from 'rn-vertical-slider';
+import RNBluetoothClassic, {
+    BluetoothDevice
+} from 'react-native-bluetooth-classic';
 
 export default class Slider extends Component{
     constructor(props){
@@ -17,7 +19,6 @@ export default class Slider extends Component{
             connected: false,
             section: 0
         }
-        //this.manager = new BleManager();
     }
 
     styles = StyleSheet.create({
@@ -35,80 +36,44 @@ export default class Slider extends Component{
           }
     });
 
+
+    async test () {
+        try{
+            const granted = await PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION);
+            console.log(granted);
+            console.log("before");
+            const device = await RNBluetoothClassic.pairDevice("98:D3:31:F4:25:E3");
+            // const isConnect = await device.isConnected();
+            // console.log(isConnect);
+            // await device.connect();
+            await device.write("asdf");
+            console.log("after");
+            console.log(device.name);
+        } catch (err){
+            console.log(err);
+        }
+    }
+
     componentDidMount () {
-        Promise.all([
-          BluetoothSerial.isEnabled(),
-          BluetoothSerial.list()
-        ])
-        .then((values) => {
-          const [ isEnabled, devices ] = values
-          this.setState({ isEnabled, devices })
-        })
-    
-        BluetoothSerial.on('bluetoothEnabled', () => Toast.showShortBottom('Bluetooth enabled'))
-        BluetoothSerial.on('bluetoothDisabled', () => Toast.showShortBottom('Bluetooth disabled'))
-        BluetoothSerial.on('error', (err) => console.log(`Error: ${err.message}`))
-        BluetoothSerial.on('connectionLost', () => {
-          if (this.state.device) {
-            Toast.showShortBottom(`Connection to device ${this.state.device.name} has been lost`)
-          }
-          this.setState({ connected: false })
-        })
-        console.log(BluetoothSerial.list());
-      }
-
-
-    
-
-    // componentDidMount() {
-    //     PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION)
-    //     .then((result) => (console.log(result)))
-    //     .catch((error) => console.log(error));
-    // }
-
-    // scanAndConnect() {
-    //     const deviceIds = new Set();
-    //     this.manager.startDeviceScan(null, null, (error, device) => {
-    //         if (error) {
-    //             // Handle error (scanning will be stopped automatically)
-    //             console.log(error);
-    //             return
-    //         }
-    
-    //         // Check if it is a device you are looking for based on advertisement data
-    //         // or other criteria.
-    //         deviceIds.add(device.id);
-    //         console.log(deviceIds);
-    //         // if (device.id === '76:18:E5:DB:C7:43'){
-    //         //     this.manager.stopDeviceScan();
-    //         //     device.connect()
-    //         //     .then((device) => {
-    //         //         return device.discoverAllServicesAndCharacteristics()
-    //         //     })
-    //         //     .then((device) =>{
-    //         //         console.log(device);
-    //         //     })
-    //         //     .catch((error) => {
-    //         //         console.log(error);
-    //         //     });
-    //         // }
-    //     });
-    // }
+        this.test();
+    }
 
     render(){
         return(
             <View>
                 <View style = {{flexDirection:"row", justifyContent:"center"}}>
-                <TouchableOpacity style={this.styles.button} onPress =  {() => {
-                    this.powerOn(true);
-                }}>
-                    <Text> On </Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={this.styles.button} onPress = {()=> {
-                    this.powerOn(false);
-                }}>
-                    <Text> Off </Text>
-                </TouchableOpacity>
+                    <View style = {{flexDirection:"row", justifyContent:"center"}}>
+                    <TouchableOpacity style={this.styles.button} onPress =  {() => {
+                        this.powerOn(true);
+                    }}>
+                        <Text> On </Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={this.styles.button} onPress = {()=> {
+                        this.powerOn(false);
+                    }}>
+                        <Text> Off </Text>
+                    </TouchableOpacity>
+                    </View>
                 </View>
                 <Text> {this.state.value} </Text>
                 <VerticalSlider
@@ -131,15 +96,6 @@ export default class Slider extends Component{
                 />
             </View>
         );
-    }
-
-    connect = (device) => {
-        BluetoothSerial.connect(device.id)
-        .then((res) => {
-            Toast.showShortBottom(`Connected to device ${device.name}`)
-            this.setState({ device, connected: true, connecting: false })
-        })
-        .catch((err) => Toast.showShortBottom(err.message))
     }
 
     valueChange = (value) => {
