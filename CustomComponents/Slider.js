@@ -2,9 +2,7 @@ import React, {Component} from 'react';
 import { Button, 
     StyleSheet, Text, TouchableOpacity, View, PermissionsAndroid } from 'react-native';
 import VerticalSlider from 'rn-vertical-slider';
-import RNBluetoothClassic, {
-    BluetoothDevice
-} from 'react-native-bluetooth-classic';
+import RNBluetoothClassic, {BluetoothDevice} from 'react-native-bluetooth-classic';
 
 export default class Slider extends Component{
     constructor(props){
@@ -12,12 +10,7 @@ export default class Slider extends Component{
         this.state = {
             value : 0,
             on : true,
-            isEnabled: false,
-            discovering: false,
-            devices: [],
-            unpairedDevices: [],
-            connected: false,
-            section: 0
+            device : null
         }
     }
 
@@ -37,25 +30,32 @@ export default class Slider extends Component{
     });
 
 
-    async test () {
+    async connectAndSetup () {
         try{
             const granted = await PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION);
             console.log(granted);
             console.log("before");
-            const device = await RNBluetoothClassic.pairDevice("98:D3:31:F4:25:E3");
-            // const isConnect = await device.isConnected();
-            // console.log(isConnect);
-            // await device.connect();
-            await device.write("asdf");
-            console.log("after");
+            const device = await RNBluetoothClassic.connectToDevice("98:D3:31:F4:25:E3", {
+                CONNECTOR_TYPE: "rfcomm",
+                SECURE_SOCKET : false
+            });
+            this.setState({device : device});
             console.log(device.name);
         } catch (err){
-            console.log(err);
+            console.log(err.message);
         }
     }
 
     componentDidMount () {
-        this.test();
+        this.connectAndSetup();
+    }
+
+    async writeToDevice(message){
+        try{
+            await this.state.device.write(message);
+        } catch (err){
+            console.log(err.message);
+        }
     }
 
     render(){
@@ -65,6 +65,8 @@ export default class Slider extends Component{
                     <View style = {{flexDirection:"row", justifyContent:"center"}}>
                     <TouchableOpacity style={this.styles.button} onPress =  {() => {
                         this.powerOn(true);
+                        console.log("on");
+                        this.writeToDevice("12");
                     }}>
                         <Text> On </Text>
                     </TouchableOpacity>

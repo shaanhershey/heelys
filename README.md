@@ -1,1 +1,1 @@
-HEELYS
+The app for the Heelys project. 
