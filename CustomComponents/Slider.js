@@ -4,13 +4,16 @@ import { Button,
 import VerticalSlider from 'rn-vertical-slider';
 import RNBluetoothClassic, {BluetoothDevice} from 'react-native-bluetooth-classic';
 
+const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
+
 export default class Slider extends Component{
     constructor(props){
         super(props);
         this.state = {
             value : 0,
             on : true,
-            device : null
+            device : null,
+            freeToWrite: true
         }
     }
 
@@ -34,11 +37,14 @@ export default class Slider extends Component{
         try{
             const granted = await PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION);
             console.log(granted);
-            console.log("before");
-            const device = await RNBluetoothClassic.connectToDevice("98:D3:31:F4:25:E3", {
-                CONNECTOR_TYPE: "rfcomm",
-                SECURE_SOCKET : false
+            const device = await RNBluetoothClassic.pairDevice("98:D3:31:F4:25:E3");
+            console.log(device.name);
+            await device.connect({
+                CONNECTOR_TYPE: 'delimited',
+                SECURE_SOCKET : false,
+                DELIMETER : '\n'
             });
+            console.log("connected");
             this.setState({device : device});
             console.log(device.name);
         } catch (err){
@@ -50,9 +56,19 @@ export default class Slider extends Component{
         this.connectAndSetup();
     }
 
+    async allowWriting () {
+        await sleep(1000);
+        this.setState({freeToWrite : true});
+    }
+
     async writeToDevice(message){
         try{
-            await this.state.device.write(message);
+            if (this.state.freeToWrite || message == "0"){
+                console.log(message);
+                await this.state.device.write(message);
+                this.setState({freeToWrite : false});
+                this.allowWriting();
+            }
         } catch (err){
             console.log(err.message);
         }
@@ -65,8 +81,6 @@ export default class Slider extends Component{
                     <View style = {{flexDirection:"row", justifyContent:"center"}}>
                     <TouchableOpacity style={this.styles.button} onPress =  {() => {
                         this.powerOn(true);
-                        console.log("on");
-                        this.writeToDevice("12");
                     }}>
                         <Text> On </Text>
                     </TouchableOpacity>
@@ -88,6 +102,7 @@ export default class Slider extends Component{
                     }}
                     onComplete={(value) => {
                         this.valueChange(value);
+                        this.writeToDevice(value);
                     }}
                     width={50}
                     height={300}
