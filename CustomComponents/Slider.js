@@ -40,6 +40,10 @@ export default class Slider extends Component{
             const device = await RNBluetoothClassic.pairDevice("98:D3:31:F4:25:E3");
             console.log(device.name);
             await device.connect({
+                // Weird line, package not up to date, must define the connection type
+                // as delimited in order for the connector type to really be 
+                // rfcomm. See issue #71 on github for the package or could download
+                // next version of package but this works.
                 CONNECTOR_TYPE: 'delimited',
                 SECURE_SOCKET : false,
                 DELIMETER : '\n'
